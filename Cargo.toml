@@ -1,0 +1,27 @@
+[package]
+name = "railway"
+version = "0.1.0"
+edition = "2021"
+authors = [ "Nathan ROYER <nathan.royer.pro@gmail.com>" ]
+description = "Binary file format for vector animated pictures"
+license = "MIT"
+keywords = ["vector-graphics", "render", "svg", "file-format", "binary"]
+readme = "README.md"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+zeno = { version = "0.2", optional = true }
+
+[dev-dependencies]
+png = "0.17"
+
+[features]
+# default = [ "zeno" ]
+
+[[example]]
+name = "generate"
+
+[[example]]
+name = "to_png"
+required-features = [ "zeno" ]

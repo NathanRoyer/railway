@@ -1,0 +1,111 @@
+FMT
+
+u32: unsigned integer on four bytes in big-endian order
+f32: IEEE 754 number on four bytes in big endian order
+nts: utf-8, null terminated string (C's strings)
+step_type:
+    0 = arc
+    1 = cubic bezier curve
+    2 = quadratic bezier curve
+    3 = linear bezier curve (straight line)
+
+u32   magic
+
+---- virtual machine part below ----
+
+u32   # of arguments
+      arguments:
+u32       name_length (in terms of bytes)
+f32       x_default_value
+f32       y_default_value
+f32       x_range_min
+f32       x_range_max
+f32       y_range_min
+f32       y_range_max
+
+u32   # of instructions
+      instructions:
+u32       operation
+u32       op1_addr
+u32       op2_addr
+u32       op3_addr
+
+u32   # of outputs
+      outputs:
+u32       name_length (in terms of bytes)
+u32       addr
+
+---- rendering part below ----
+
+u32   # of triangles
+      triangles:
+u32       p1_addr
+u32       p2_addr
+u32       p3_addr
+u32       p1_rg_addr
+u32       p1_ba_addr
+u32       p2_rg_addr
+u32       p2_ba_addr
+u32       p3_rg_addr
+u32       p3_ba_addr
+
+u32   # of arcs
+      arcs:
+u32       center_addr
+u32       angular_range_addr
+u32       radii_addr
+
+u32   # of cubic bezier curves
+      bezier curves:
+u32       p1_addr
+u32       p2_addr
+u32       p3_addr
+u32       p4_addr
+
+u32   # of quadratic bezier curves
+      quadratic curves:
+u32       p1_addr
+u32       p2_addr
+u32       p3_addr
+
+u32   # of lines
+      lines:
+u32       p1_addr
+u32       p2_addr
+
+u32   # of strokers
+      strokers:
+u32       pattern_addr (p.x = dash length, p.y = gap length)
+u32       width_addr (width = p.x + p.y)
+u32       rg_addr
+u32       ba_addr
+
+u32   # of paths
+      paths:
+u32       # of steps
+          steps:
+u32           step_type
+u32           index
+
+u32   # of backgrounds
+      backgrounds:
+u32       # of triangles
+          triangles:
+u32           triangle_index
+
+u32   # of rendering steps
+      rendering steps:
+u32       clip_or_stroke (0 or 1)
+u32       path_index
+          if clip_or_stroke == 0:
+u32           background_index
+          if clip_or_stroke == 1:
+u32           stroker_index
+
+---- strings below ----
+
+      arguments:
+nts       name
+
+      outputs:
+nts       name
