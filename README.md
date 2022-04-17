@@ -3,12 +3,12 @@
 Railway is a binary file format for vector animated pictures.
 This is a library for parsing, computing and rendering such pictures.
 
-![generated.png](generated.png)
+![generated.png](https://github.com/NathanRoyer/railway/blob/main/generated.png?raw=true)
 
 # Anatomy of a railway file
 
 Throughout this format we use the term "Couple" which means a pair of floating point numbers.
-For a more exhaustive description of the file format, [see the format specification](format.txt).
+For a more exhaustive description of the file format, [see the format specification](https://github.com/NathanRoyer/railway/blob/main/format.txt).
 
 ## Virtual Machine Program
 
