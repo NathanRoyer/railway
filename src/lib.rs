@@ -151,8 +151,9 @@ impl Program {
 	}
 	
 	#[cfg(feature = "zeno")]
-	pub fn render(&self, s: &[Couple], d: &mut [u8], m: &mut [u8], w: usize) {
-		zeno_rdr::rdr(self, s, d, m, w);
+	pub fn render(&self, stack: &[Couple], dst: &mut [u8],
+		mask: &mut [u8], width: usize, pitch: usize) {
+		zeno_rdr::rdr(self, stack, dst, mask, width, pitch);
 	}
 
 	/// does not check argument default values (on purpose)

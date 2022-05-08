@@ -3,7 +3,7 @@
 Railway is a binary file format for vector animated pictures.
 This is a library for parsing, computing and rendering such pictures.
 
-![generated.png](https://github.com/NathanRoyer/railway/blob/main/generated.png?raw=true)
+![generated.png](https://docs.rs/crate/railway/0.1.1/source/generated.png)
 
 # Anatomy of a railway file
 

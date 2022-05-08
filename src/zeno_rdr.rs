@@ -79,9 +79,10 @@ fn ponder(a: u8, b: f32, p: u8) -> u8 {
 	((a as f32) * n + b * 255.0 * p) as u8
 }
 
-pub fn rdr(p: &Program, s: &[Couple], d: &mut [u8], m: &mut [u8], w: usize) {
-	let s = |a: u32| s[a as usize];
-	let h = d.len() / (w * 4);
+pub fn rdr(p: &Program, stack: &[Couple], dst: &mut [u8], mask: &mut [u8], w: usize, pitch: usize) {
+	let s = |a: u32| stack[a as usize];
+	let row = w * 4;
+	let h = dst.len() / (w * 4);
 	let mut paths = Vec::with_capacity(p.paths.len());
 	for path in &p.paths {
 		let mut zeno_path = Vec::new();
@@ -141,7 +142,7 @@ pub fn rdr(p: &Program, s: &[Couple], d: &mut [u8], m: &mut [u8], w: usize) {
 		// println!("path len: {}", zeno_path.len());
 		let mut zeno_mask = Mask::new(&zeno_path);
 		zeno_mask.size(w as u32, h as u32);
-		m.fill(0);
+		mask.fill(0);
 		if let Clip(_, i) = rs {
 			let background = &p.backgrounds[*i];
 			let mut triangles = Vec::with_capacity(background.len());
@@ -154,23 +155,28 @@ pub fn rdr(p: &Program, s: &[Couple], d: &mut [u8], m: &mut [u8], w: usize) {
 				triangles.push(Triangle::new(p, c));
 			}
 			zeno_mask.style(Fill::NonZero);
-			zeno_mask.render_into(m, None);
+			zeno_mask.render_into(mask, None);
 			let mut j = 0;
+			let mut k = 0;
 			for y in 0..h {
 				for x in 0..w {
-					let q = m[y * w + x];
+					let q = mask[y * w + x];
 					let point = Couple::new(x as f32, y as f32);
 					for t in &triangles {
 						if let Some(color) = t.color_at(point) {
 							let [r, g, b, a] = color;
-							d[j + 0] = ponder(d[j + 0], r, q);
-							d[j + 1] = ponder(d[j + 1], g, q);
-							d[j + 2] = ponder(d[j + 2], b, q);
-							d[j + 3] = ponder(d[j + 3], a, q);
+							dst[k + j + 0] = ponder(dst[k + j + 0], r, q);
+							dst[k + j + 1] = ponder(dst[k + j + 1], g, q);
+							dst[k + j + 2] = ponder(dst[k + j + 2], b, q);
+							dst[k + j + 3] = ponder(dst[k + j + 3], a, q);
 							break;
 						}
 					}
 					j += 4;
+					if j == row {
+						j = 0;
+						k += row + pitch;
+					}
 				}
 			}
 		}
@@ -185,17 +191,22 @@ pub fn rdr(p: &Program, s: &[Couple], d: &mut [u8], m: &mut [u8], w: usize) {
 			s.dash(&p, 0.0);
 			zeno_mask.style(s);
 			// println!("A");
-			zeno_mask.render_into(m, None);
+			zeno_mask.render_into(mask, None);
 			// println!("B");
 			let mut j = 0;
-			for q in m.iter() {
+			let mut k = 0;
+			for q in mask.iter() {
 				if *q != 0 {
-					d[j + 0] = ponder(d[j + 0], rg.x, *q);
-					d[j + 1] = ponder(d[j + 1], rg.y, *q);
-					d[j + 2] = ponder(d[j + 2], ba.x, *q);
-					d[j + 3] = ponder(d[j + 3], ba.y, *q);
+					dst[k + j + 0] = ponder(dst[k + j + 0], rg.x, *q);
+					dst[k + j + 1] = ponder(dst[k + j + 1], rg.y, *q);
+					dst[k + j + 2] = ponder(dst[k + j + 2], ba.x, *q);
+					dst[k + j + 3] = ponder(dst[k + j + 3], ba.y, *q);
 				}
 				j += 4;
+				if j == row {
+					j = 0;
+					k += row + pitch;
+				}
 			}
 		}
 	}
