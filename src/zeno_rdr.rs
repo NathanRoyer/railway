@@ -79,10 +79,9 @@ fn ponder(a: u8, b: f32, p: u8) -> u8 {
 	((a as f32) * n + b * 255.0 * p) as u8
 }
 
-pub fn rdr(p: &Program, stack: &[Couple], dst: &mut [u8], mask: &mut [u8], w: usize, pitch: usize) {
+pub fn rdr(p: &Program, stack: &[Couple], dst: &mut [u8], mask: &mut [u8], w: usize, h: usize, pitch: usize) {
 	let s = |a: u32| stack[a as usize];
 	let row = w * 4;
-	let h = dst.len() / (w * 4);
 	let mut paths = Vec::with_capacity(p.paths.len());
 	for path in &p.paths {
 		let mut zeno_path = Vec::new();
