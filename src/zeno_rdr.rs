@@ -12,6 +12,7 @@ use zeno::Command;
 use zeno::Stroke as ZenoStroke;
 use zeno::Fill;
 use zeno::Mask;
+use zeno::Join as ZenoJoin;
 
 // use core::f32::consts::TAU; // 2*PI
 use core::f32::consts::PI;
@@ -188,10 +189,9 @@ pub fn rdr(p: &Program, stack: &[Couple], dst: &mut [u8], mask: &mut [u8], w: us
 			let ba = s(stroker.color[1]);
 			let mut s = ZenoStroke::new(w.x + w.y);
 			s.dash(&p, 0.0);
+			s.join(ZenoJoin::Bevel); // workaround zeno issue #1
 			zeno_mask.style(s);
-			// println!("A");
 			zeno_mask.render_into(mask, None);
-			// println!("B");
 			let mut j = 0;
 			let mut k = 0;
 			for q in mask.iter() {
