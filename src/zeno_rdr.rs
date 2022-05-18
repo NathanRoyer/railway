@@ -6,6 +6,8 @@ use crate::StepType::Line;
 use crate::StepType::Arc;
 use crate::Program;
 use crate::Couple;
+use crate::RWY_PXF_ARGB8888;
+use crate::RWY_PXF_RGBA8888;
 
 use zeno::PathBuilder;
 use zeno::Command;
@@ -71,16 +73,12 @@ fn begin(p: &mut Vec<Command>, c: Couple) {
 	};
 }
 
-/*fn ponder(q: u8, f: f32) -> u8 {
-	(q as f32 * f).clamp(u8::MIN as f32, u8::MAX as f32).round() as u8
-}*/
-fn ponder(a: u8, b: f32, p: u8) -> u8 {
-	let p = (p as f32) / 255.0;
-	let n = 1.0 - p;
-	((a as f32) * n + b * 255.0 * p) as u8
-}
-
-pub fn rdr(p: &Program, stack: &[Couple], dst: &mut [u8], mask: &mut [u8], w: usize, h: usize, pitch: usize) {
+pub fn rdr<const PXF: u8>(p: &Program, stack: &[Couple], dst: &mut [u8], mask: &mut [u8], w: usize, h: usize, pitch: usize) {
+	let channels = match PXF {
+		RWY_PXF_ARGB8888 => (3, 0, 1, 2),
+		RWY_PXF_RGBA8888 => (0, 1, 2, 3),
+		_ => unreachable!(),
+	};
 	let s = |a: u32| stack[a as usize];
 	let row = w * 4;
 	let mut paths = Vec::with_capacity(p.paths.len());
@@ -165,10 +163,10 @@ pub fn rdr(p: &Program, stack: &[Couple], dst: &mut [u8], mask: &mut [u8], w: us
 					for t in &triangles {
 						if let Some(color) = t.color_at(point) {
 							let [r, g, b, a] = color;
-							dst[k + j + 0] = ponder(dst[k + j + 0], r, q);
-							dst[k + j + 1] = ponder(dst[k + j + 1], g, q);
-							dst[k + j + 2] = ponder(dst[k + j + 2], b, q);
-							dst[k + j + 3] = ponder(dst[k + j + 3], a, q);
+							dst[k + j + channels.0] = (r * (q as f32)) as u8;
+							dst[k + j + channels.1] = (g * (q as f32)) as u8;
+							dst[k + j + channels.2] = (b * (q as f32)) as u8;
+							dst[k + j + channels.3] = (a * (q as f32)) as u8;
 							break;
 						}
 					}
@@ -196,10 +194,10 @@ pub fn rdr(p: &Program, stack: &[Couple], dst: &mut [u8], mask: &mut [u8], w: us
 			let mut k = 0;
 			for q in mask.iter() {
 				if *q != 0 {
-					dst[k + j + 0] = ponder(dst[k + j + 0], rg.x, *q);
-					dst[k + j + 1] = ponder(dst[k + j + 1], rg.y, *q);
-					dst[k + j + 2] = ponder(dst[k + j + 2], ba.x, *q);
-					dst[k + j + 3] = ponder(dst[k + j + 3], ba.y, *q);
+					dst[k + j + channels.0] = (rg.x * (*q as f32)) as u8;
+					dst[k + j + channels.1] = (rg.y * (*q as f32)) as u8;
+					dst[k + j + channels.2] = (ba.x * (*q as f32)) as u8;
+					dst[k + j + channels.3] = (ba.y * (*q as f32)) as u8;
 				}
 				j += 4;
 				if j == row {

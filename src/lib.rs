@@ -43,6 +43,9 @@ pub use format::parse;
 pub use format::dump;
 pub use format::size;
 
+pub const RWY_PXF_ARGB8888: u8 = 0;
+pub const RWY_PXF_RGBA8888: u8 = 1;
+
 pub type Address = u32;
 pub type ColorAddress = [Address; 2];
 
@@ -151,9 +154,9 @@ impl Program {
 	}
 	
 	#[cfg(feature = "zeno")]
-	pub fn render(&self, stack: &[Couple], dst: &mut [u8],
+	pub fn render<const PXF: u8>(&self, stack: &[Couple], dst: &mut [u8],
 		mask: &mut [u8], width: usize, height: usize, pitch: usize) {
-		zeno_rdr::rdr(self, stack, dst, mask, width, height, pitch);
+		zeno_rdr::rdr::<PXF>(self, stack, dst, mask, width, height, pitch);
 	}
 
 	/// does not check argument default values (on purpose)

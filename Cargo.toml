@@ -1,6 +1,6 @@
 [package]
 name = "railway"
-version = "0.1.4"
+version = "0.1.5"
 edition = "2021"
 authors = [ "Nathan ROYER <nathan.royer.pro@gmail.com>" ]
 description = "Binary file format for vector animated pictures"
