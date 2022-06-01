@@ -69,6 +69,12 @@ fn begin(p: &mut Vec<Command>, c: Couple) {
     };
 }
 
+fn ponder(a: u8, b: f32, p: u8) -> u8 {
+    let p = (p as f32) / 255.0;
+    let n = 1.0 - p;
+    ((a as f32) * n + b * 255.0 * p) as u8
+}
+
 pub fn rdr<const PXF: u8>(
     p: &Program,
     stack: &[Couple],
@@ -78,6 +84,14 @@ pub fn rdr<const PXF: u8>(
     h: usize,
     pitch: usize,
 ) {
+    {
+        let mut i = 0;
+        let px_width = w * 4;
+        for _ in 0..h {
+            dst[i..][..px_width].fill(0);
+            i += px_width + pitch;
+        }
+    }
     let channels = match PXF {
         RWY_PXF_ARGB8888 => (3, 0, 1, 2),
         RWY_PXF_RGBA8888 => (0, 1, 2, 3),
@@ -163,17 +177,15 @@ pub fn rdr<const PXF: u8>(
             for y in 0..h {
                 for x in 0..w {
                     let q = mask[q_i];
-                    if q == 0 {
-                        dst[k + j..][..4].fill(0);
-                    } else {
+                    if q != 0 {
                         let point = Couple::new(x as f32, y as f32);
                         for t in &triangles {
                             if let Some(color) = t.color_at(point) {
                                 let [r, g, b, a] = color;
-                                dst[k + j + channels.0] = (r * (q as f32)) as u8;
-                                dst[k + j + channels.1] = (g * (q as f32)) as u8;
-                                dst[k + j + channels.2] = (b * (q as f32)) as u8;
-                                dst[k + j + channels.3] = (a * (q as f32)) as u8;
+                                dst[k + j + channels.0] = ponder(dst[k + j + channels.0], r, q);
+                                dst[k + j + channels.1] = ponder(dst[k + j + channels.1], g, q);
+                                dst[k + j + channels.2] = ponder(dst[k + j + channels.2], b, q);
+                                dst[k + j + channels.3] = ponder(dst[k + j + channels.3], a, q);
                                 break;
                             }
                         }
@@ -194,6 +206,7 @@ pub fn rdr<const PXF: u8>(
             let w = s(stroker.width);
             let rg = s(stroker.color[0]);
             let ba = s(stroker.color[1]);
+            let [r, g, b, a] = [rg.x, rg.y, ba.x, ba.y];
             let mut s = ZenoStroke::new(w.x + w.y);
             s.dash(&p, 0.0);
             s.join(ZenoJoin::Bevel); // workaround zeno issue #1
@@ -202,13 +215,12 @@ pub fn rdr<const PXF: u8>(
             let mut j = 0;
             let mut k = 0;
             for q in mask.iter() {
-                if *q == 0 {
-                    dst[k + j..][..4].fill(0);
-                } else {
-                    dst[k + j + channels.0] = (rg.x * (*q as f32)) as u8;
-                    dst[k + j + channels.1] = (rg.y * (*q as f32)) as u8;
-                    dst[k + j + channels.2] = (ba.x * (*q as f32)) as u8;
-                    dst[k + j + channels.3] = (ba.y * (*q as f32)) as u8;
+                let q = *q;
+                if q != 0 {
+                    dst[k + j + channels.0] = ponder(dst[k + j + channels.0], r, q);
+                    dst[k + j + channels.1] = ponder(dst[k + j + channels.1], g, q);
+                    dst[k + j + channels.2] = ponder(dst[k + j + channels.2], b, q);
+                    dst[k + j + channels.3] = ponder(dst[k + j + channels.3], a, q);
                 }
                 j += 4;
                 if j == row {
