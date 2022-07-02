@@ -1,6 +1,8 @@
 use crate::Address;
 use crate::ColorAddress;
 
+use alloc::vec::Vec;
+
 use StepType::*;
 
 #[derive(Debug, Copy, Clone, PartialEq)]

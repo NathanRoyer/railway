@@ -15,9 +15,9 @@ use crate::Triangle;
 use crate::OPERATIONS;
 use crate::STEP_TYPES;
 
-use std::io::Result as IoResult;
-use std::io::Write;
-use std::mem::size_of;
+use core::mem::size_of;
+use alloc::vec::Vec;
+use alloc::string::String;
 
 use ParsingError::*;
 
@@ -246,132 +246,134 @@ pub fn size(p: &Program) -> usize {
     sz + size_of::<u32>() * u32s
 }
 
-pub fn dump<T: Write>(src: &Program, dst: &mut T) -> IoResult<usize> {
-    let mut sz = dst.write(&MAGIC_BYTES)?;
+pub fn dump<T, E>(src: &Program, mut write_fn: T) -> Result<usize, E>
+    where T: FnMut(&[u8]) -> Result<usize, E>
+{
+    let mut sz = write_fn(&MAGIC_BYTES)?;
 
-    sz += dst.write(&_u32(src.arguments.len()).to_be_bytes())?;
+    sz += write_fn(&_u32(src.arguments.len()).to_be_bytes())?;
     for i in &src.arguments {
-        sz += dst.write(
+        sz += write_fn(
             &match &i.name {
                 Some(s) => _u32(s.len()),
                 _ => 0,
             }
             .to_be_bytes(),
         )?;
-        sz += dst.write(&i.value.x.to_be_bytes())?;
-        sz += dst.write(&i.value.y.to_be_bytes())?;
-        sz += dst.write(&i.range.0.x.to_be_bytes())?;
-        sz += dst.write(&i.range.1.x.to_be_bytes())?;
-        sz += dst.write(&i.range.0.y.to_be_bytes())?;
-        sz += dst.write(&i.range.1.y.to_be_bytes())?;
+        sz += write_fn(&i.value.x.to_be_bytes())?;
+        sz += write_fn(&i.value.y.to_be_bytes())?;
+        sz += write_fn(&i.range.0.x.to_be_bytes())?;
+        sz += write_fn(&i.range.1.x.to_be_bytes())?;
+        sz += write_fn(&i.range.0.y.to_be_bytes())?;
+        sz += write_fn(&i.range.1.y.to_be_bytes())?;
     }
 
-    sz += dst.write(&_u32(src.instructions.len()).to_be_bytes())?;
+    sz += write_fn(&_u32(src.instructions.len()).to_be_bytes())?;
     for i in &src.instructions {
-        sz += dst.write(&i.operation.opcode().to_be_bytes())?;
-        sz += dst.write(&i.operands[0].to_be_bytes())?;
-        sz += dst.write(&i.operands[1].to_be_bytes())?;
-        sz += dst.write(&i.operands[2].to_be_bytes())?;
+        sz += write_fn(&i.operation.opcode().to_be_bytes())?;
+        sz += write_fn(&i.operands[0].to_be_bytes())?;
+        sz += write_fn(&i.operands[1].to_be_bytes())?;
+        sz += write_fn(&i.operands[2].to_be_bytes())?;
     }
 
-    sz += dst.write(&_u32(src.outputs.len()).to_be_bytes())?;
+    sz += write_fn(&_u32(src.outputs.len()).to_be_bytes())?;
     for i in &src.outputs {
-        sz += dst.write(
+        sz += write_fn(
             &match &i.name {
                 Some(s) => _u32(s.len()),
                 _ => 0,
             }
             .to_be_bytes(),
         )?;
-        sz += dst.write(&i.address.to_be_bytes())?;
+        sz += write_fn(&i.address.to_be_bytes())?;
     }
 
-    sz += dst.write(&_u32(src.triangles.len()).to_be_bytes())?;
+    sz += write_fn(&_u32(src.triangles.len()).to_be_bytes())?;
     for i in &src.triangles {
-        sz += dst.write(&i.points[0].to_be_bytes())?;
-        sz += dst.write(&i.points[1].to_be_bytes())?;
-        sz += dst.write(&i.points[2].to_be_bytes())?;
-        sz += dst.write(&i.colors[0][0].to_be_bytes())?;
-        sz += dst.write(&i.colors[0][1].to_be_bytes())?;
-        sz += dst.write(&i.colors[1][0].to_be_bytes())?;
-        sz += dst.write(&i.colors[1][1].to_be_bytes())?;
-        sz += dst.write(&i.colors[2][0].to_be_bytes())?;
-        sz += dst.write(&i.colors[2][1].to_be_bytes())?;
+        sz += write_fn(&i.points[0].to_be_bytes())?;
+        sz += write_fn(&i.points[1].to_be_bytes())?;
+        sz += write_fn(&i.points[2].to_be_bytes())?;
+        sz += write_fn(&i.colors[0][0].to_be_bytes())?;
+        sz += write_fn(&i.colors[0][1].to_be_bytes())?;
+        sz += write_fn(&i.colors[1][0].to_be_bytes())?;
+        sz += write_fn(&i.colors[1][1].to_be_bytes())?;
+        sz += write_fn(&i.colors[2][0].to_be_bytes())?;
+        sz += write_fn(&i.colors[2][1].to_be_bytes())?;
     }
 
-    sz += dst.write(&_u32(src.arcs.len()).to_be_bytes())?;
+    sz += write_fn(&_u32(src.arcs.len()).to_be_bytes())?;
     for i in &src.arcs {
-        sz += dst.write(&i.center.to_be_bytes())?;
-        sz += dst.write(&i.angular_range.to_be_bytes())?;
-        sz += dst.write(&i.radii.to_be_bytes())?;
+        sz += write_fn(&i.center.to_be_bytes())?;
+        sz += write_fn(&i.angular_range.to_be_bytes())?;
+        sz += write_fn(&i.radii.to_be_bytes())?;
     }
 
-    sz += dst.write(&_u32(src.cubic_curves.len()).to_be_bytes())?;
+    sz += write_fn(&_u32(src.cubic_curves.len()).to_be_bytes())?;
     for i in &src.cubic_curves {
-        sz += dst.write(&i.points[0].to_be_bytes())?;
-        sz += dst.write(&i.points[1].to_be_bytes())?;
-        sz += dst.write(&i.points[2].to_be_bytes())?;
-        sz += dst.write(&i.points[3].to_be_bytes())?;
+        sz += write_fn(&i.points[0].to_be_bytes())?;
+        sz += write_fn(&i.points[1].to_be_bytes())?;
+        sz += write_fn(&i.points[2].to_be_bytes())?;
+        sz += write_fn(&i.points[3].to_be_bytes())?;
     }
 
-    sz += dst.write(&_u32(src.quadratic_curves.len()).to_be_bytes())?;
+    sz += write_fn(&_u32(src.quadratic_curves.len()).to_be_bytes())?;
     for i in &src.quadratic_curves {
-        sz += dst.write(&i.points[0].to_be_bytes())?;
-        sz += dst.write(&i.points[1].to_be_bytes())?;
-        sz += dst.write(&i.points[2].to_be_bytes())?;
+        sz += write_fn(&i.points[0].to_be_bytes())?;
+        sz += write_fn(&i.points[1].to_be_bytes())?;
+        sz += write_fn(&i.points[2].to_be_bytes())?;
     }
 
-    sz += dst.write(&_u32(src.lines.len()).to_be_bytes())?;
+    sz += write_fn(&_u32(src.lines.len()).to_be_bytes())?;
     for i in &src.lines {
-        sz += dst.write(&i.points[0].to_be_bytes())?;
-        sz += dst.write(&i.points[1].to_be_bytes())?;
+        sz += write_fn(&i.points[0].to_be_bytes())?;
+        sz += write_fn(&i.points[1].to_be_bytes())?;
     }
 
-    sz += dst.write(&_u32(src.strokers.len()).to_be_bytes())?;
+    sz += write_fn(&_u32(src.strokers.len()).to_be_bytes())?;
     for i in &src.strokers {
-        sz += dst.write(&i.pattern.to_be_bytes())?;
-        sz += dst.write(&i.width.to_be_bytes())?;
-        sz += dst.write(&i.color[0].to_be_bytes())?;
-        sz += dst.write(&i.color[1].to_be_bytes())?;
+        sz += write_fn(&i.pattern.to_be_bytes())?;
+        sz += write_fn(&i.width.to_be_bytes())?;
+        sz += write_fn(&i.color[0].to_be_bytes())?;
+        sz += write_fn(&i.color[1].to_be_bytes())?;
     }
 
-    sz += dst.write(&_u32(src.paths.len()).to_be_bytes())?;
+    sz += write_fn(&_u32(src.paths.len()).to_be_bytes())?;
     for i in &src.paths {
-        sz += dst.write(&_u32(i.len()).to_be_bytes())?;
+        sz += write_fn(&_u32(i.len()).to_be_bytes())?;
         for (step_type, index) in i {
-            sz += dst.write(&step_type.as_u32().to_be_bytes())?;
-            sz += dst.write(&_u32(*index).to_be_bytes())?;
+            sz += write_fn(&step_type.as_u32().to_be_bytes())?;
+            sz += write_fn(&_u32(*index).to_be_bytes())?;
         }
     }
 
-    sz += dst.write(&_u32(src.backgrounds.len()).to_be_bytes())?;
+    sz += write_fn(&_u32(src.backgrounds.len()).to_be_bytes())?;
     for i in &src.backgrounds {
-        sz += dst.write(&_u32(i.len()).to_be_bytes())?;
+        sz += write_fn(&_u32(i.len()).to_be_bytes())?;
         for index in i {
-            sz += dst.write(&_u32(*index).to_be_bytes())?;
+            sz += write_fn(&_u32(*index).to_be_bytes())?;
         }
     }
 
-    sz += dst.write(&_u32(src.rendering_steps.len()).to_be_bytes())?;
+    sz += write_fn(&_u32(src.rendering_steps.len()).to_be_bytes())?;
     for i in &src.rendering_steps {
         let (clip_or_stroke, i1, i2) = match i {
             RenderingStep::Clip(p, b) => (0u32, *p, *b),
             RenderingStep::Stroke(p, s) => (1u32, *p, *s),
         };
-        sz += dst.write(&clip_or_stroke.to_be_bytes())?;
-        sz += dst.write(&_u32(i1).to_be_bytes())?;
-        sz += dst.write(&_u32(i2).to_be_bytes())?;
+        sz += write_fn(&clip_or_stroke.to_be_bytes())?;
+        sz += write_fn(&_u32(i1).to_be_bytes())?;
+        sz += write_fn(&_u32(i2).to_be_bytes())?;
     }
 
     for i in &src.arguments {
         if let Some(s) = &i.name {
-            sz += dst.write(s.as_bytes())?;
+            sz += write_fn(s.as_bytes())?;
         }
     }
 
     for i in &src.outputs {
         if let Some(s) = &i.name {
-            sz += dst.write(s.as_bytes())?;
+            sz += write_fn(s.as_bytes())?;
         }
     }
 

@@ -4,9 +4,13 @@ use crate::Float;
 use crate::Program;
 use crate::C_ZERO;
 
-use std::cmp::Ordering;
+use core::cmp::Ordering;
+use alloc::vec::Vec;
+use alloc::string::String;
 
 use Operation::*;
+
+use num_traits::real::Real;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Argument {

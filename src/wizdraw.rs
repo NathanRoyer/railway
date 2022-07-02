@@ -18,6 +18,7 @@ use vek::vec::repr_c::vec2::Vec2;
 use vek::num_traits::real::Real;
 
 use core::f32::consts::PI;
+use alloc::vec::Vec;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Triangle<C> {

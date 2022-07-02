@@ -1,3 +1,7 @@
+#![no_std]
+extern crate alloc;
+use alloc::vec::Vec;
+
 pub mod computing;
 pub mod drawing;
 pub mod format;
@@ -6,9 +10,6 @@ pub mod wizdraw;
 
 #[cfg(test)]
 mod tests;
-
-use std::io::Result as IoResult;
-use std::io::Write;
 
 use vek::vec::repr_c::vec2::Vec2;
 
@@ -103,8 +104,10 @@ impl Program {
         size(self)
     }
 
-    pub fn dump<T: Write>(&self, dst: &mut T) -> IoResult<usize> {
-        dump(self, dst)
+    pub fn dump<T, E>(&self, append_bytes: T) -> Result<usize, E>
+        where T: FnMut(&[u8]) -> Result<usize, E>
+    {
+        dump(self, append_bytes)
     }
 
     pub fn stack_size(&self) -> usize {

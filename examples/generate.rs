@@ -92,7 +92,10 @@ fn main() {
 	p.rendering_steps.push(RenderingStep::Stroke(1, 0));
 
 	let mut buffer = Vec::with_capacity(p.file_size());
-	p.dump(&mut buffer).unwrap();
+	p.dump::<_, ()>(|slice| {
+		buffer.extend_from_slice(slice);
+		Ok(slice.len())
+	}).unwrap();
 	let file_name = args().last().unwrap();
 	fs::write(file_name, &buffer).unwrap();
 }
