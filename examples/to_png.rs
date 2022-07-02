@@ -4,6 +4,7 @@ use png::Encoder;
 use png::ColorType::Rgba;
 use png::BitDepth::Eight;
 use railway::Program;
+use railway::RWY_PXF_RGBA8888 as PXF;
 use std::time::Instant;
 
 fn main() {
@@ -21,10 +22,10 @@ fn main() {
 	let mut canvas = vec![0; length * 4];
 	let mut mask = vec![0; length];
 
-	let runs = 1;
+	let runs = 100;
 	let now = Instant::now();
 	for _ in 0..runs {
-		p.render(&stack, &mut canvas, &mut mask, size.0, size.1, 0);
+		p.render::<PXF>(&stack, &mut canvas, &mut mask, size.0, size.1, 0);
 	}
 	println!("rendered {} times in {}ms.", runs, now.elapsed().as_millis());
 

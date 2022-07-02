@@ -1,3 +1,3 @@
-cargo run --release --example generate -- generated.rwy
+cargo run -r --example generate -- generated.rwy
 # hexdump generated.rwy
-cargo run --release --features=zeno --example to_png -- generated
+cargo run -r --example to_png -- generated

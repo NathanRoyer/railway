@@ -10,17 +10,14 @@ repository = "https://github.com/NathanRoyer/railway"
 readme = "README.md"
 
 [dependencies]
-zeno = { version = "0.2", optional = true }
+wizdraw = "1.0.0"
+vek = { version = "0.15.8", default-features = false }
 
 [dev-dependencies]
 png = "0.17"
-
-[features]
-# default = [ "zeno" ]
 
 [[example]]
 name = "generate"
 
 [[example]]
 name = "to_png"
-required-features = [ "zeno" ]

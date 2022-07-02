@@ -14,8 +14,8 @@ use core::f32::consts::TAU;
 
 fn main() {
 	let mut p = Program::new();
-	let w = 2000.0;
-	let h = 2000.0;
+	let w = 200.0;
+	let h = 200.0;
 
 	// top left = 0
 	p.arguments.push(arg(None, C_ZERO));
@@ -35,7 +35,7 @@ fn main() {
 	// pattern = 8
 	p.arguments.push(arg(None, Couple::new(100.0, 0.0)));
 	// width = 9
-	p.arguments.push(arg(None, Couple::new(2.0, 0.0)));
+	p.arguments.push(arg(None, Couple::new(4.0, 0.0)));
 	// inverted rg = 10
 	p.arguments.push(arg(None, Couple::new(0.1, 0.5)));
 	// half circle angles = 11

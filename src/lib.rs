@@ -2,15 +2,15 @@ pub mod computing;
 pub mod drawing;
 pub mod format;
 pub mod primitive;
-
-#[cfg(feature = "zeno")]
-pub mod zeno_rdr;
+pub mod wizdraw;
 
 #[cfg(test)]
 mod tests;
 
 use std::io::Result as IoResult;
 use std::io::Write;
+
+use vek::vec::repr_c::vec2::Vec2;
 
 pub use computing::compute;
 pub use computing::Argument;
@@ -67,15 +67,7 @@ pub struct Program {
 
 pub type Float = f32;
 
-#[cfg(not(feature = "zeno"))]
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub struct Couple {
-    pub x: Float,
-    pub y: Float,
-}
-
-#[cfg(feature = "zeno")]
-pub use zeno::Vector as Couple;
+pub type Couple = Vec2<Float>;
 
 pub fn at(stack: &[Couple], i: Address) -> Couple {
     stack[i as usize]
@@ -153,7 +145,6 @@ impl Program {
         None
     }
 
-    #[cfg(feature = "zeno")]
     pub fn render<const PXF: u8>(
         &self,
         stack: &[Couple],
@@ -163,7 +154,7 @@ impl Program {
         height: usize,
         pitch: usize,
     ) {
-        zeno_rdr::rdr::<PXF>(self, stack, dst, mask, width, height, pitch);
+        wizdraw::rdr::<PXF>(self, stack, dst, mask, width, height, pitch);
     }
 
     /// does not check argument default values (on purpose)
@@ -246,21 +237,8 @@ fn inf_s<T: Ord + Copy>(a: &[T], b: T) -> Option<()> {
     Some(())
 }
 
-#[cfg(not(feature = "zeno"))]
-impl From<(f32, f32)> for Couple {
-    fn from(couple: (f32, f32)) -> Self {
-        Couple {
-            x: couple.0,
-            y: couple.1,
-        }
-    }
+pub fn couple(x: Float, y: Float) -> Couple {
+    Couple::from((x, y))
 }
 
-#[cfg(not(feature = "zeno"))]
-impl Couple {
-    pub fn new(x: f32, y: f32) -> Self {
-        Self::from((x, y))
-    }
-}
-
-pub const C_ZERO: Couple = Couple { x: 0f32, y: 0f32 };
+pub const C_ZERO: Couple = Couple { x: 0 as Float, y: 0 as Float };
