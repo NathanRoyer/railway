@@ -10,11 +10,13 @@ use crate::RWY_PXF_ARGB8888;
 use crate::RWY_PXF_RGBA8888;
 use crate::Float;
 
-use wizdraw::*;
+use wizdraw::push_cubic_bezier_segments;
+use wizdraw::stroke;
+use wizdraw::fill;
 
-use vek::bezier::repr_c::CubicBezier2;
-use vek::bezier::repr_c::QuadraticBezier2;
-use vek::vec::repr_c::vec2::Vec2;
+use vek::bezier::CubicBezier2;
+use vek::bezier::QuadraticBezier2;
+use vek::vec::Vec2;
 use vek::num_traits::real::Real;
 
 use core::f32::consts::PI;
@@ -83,7 +85,7 @@ fn ponder(a: u8, b: u8, p: u8) -> u8 {
     (((a as u32) * n1024 + (b as u32) * p1024) / 1024) as u8
 }
 
-pub fn rdr<const PXF: u8>(
+pub fn rdr<const PXF: u8, const SSAA: usize>(
     p: &Program,
     stack: &[Couple],
     dst: &mut [u8],
@@ -146,7 +148,7 @@ pub fn rdr<const PXF: u8>(
                         ctrl1: s(c),
                         end: s(d),
                     };
-                    simplify::<_, 6>(&curve, 1.0, &mut wizdraw_path);
+                    push_cubic_bezier_segments::<_, 8>(&curve, 0.6, &mut wizdraw_path);
                 }
                 QuadraticCurve => {
                     let [a, b, c] = p.quadratic_curves[*index].points;
@@ -155,7 +157,7 @@ pub fn rdr<const PXF: u8>(
                         ctrl: s(b),
                         end: s(c),
                     };
-                    simplify::<_, 6>(&curve.into_cubic(), 1.0, &mut wizdraw_path);
+                    push_cubic_bezier_segments::<_, 8>(&curve.into_cubic(), 0.6, &mut wizdraw_path);
                 }
                 Line => {
                     let [a, b] = p.lines[*index].points;
@@ -189,7 +191,7 @@ pub fn rdr<const PXF: u8>(
                 let p3_c = [s(c4).x * 255.0, s(c4).y * 255.0, s(c5).x * 255.0, s(c5).y * 255.0];
                 triangles.push(Triangle::new(p, [p1_c, p2_c, p3_c]));
             }
-            rasterize(&wizdraw_path, mask, size, None);
+            fill::<_, SSAA>(&wizdraw_path, mask, size);
             let mut j = 0;
             let mut k = 0;
             let mut q_i = 0;
@@ -223,7 +225,7 @@ pub fn rdr<const PXF: u8>(
             let p = s(stroker.pattern);
             let _p = [p.x, p.y];
             let w = s(stroker.width);
-            rasterize(&wizdraw_path, mask, size, Some(w.x + w.y));
+            stroke::<_, SSAA>(&wizdraw_path, mask, size, w.x + w.y);
             let rg = s(stroker.color[0]);
             let ba = s(stroker.color[1]);
             let [r, g, b, a] = [(rg.x * 255.0) as u8, (rg.y * 255.0) as u8, (ba.x * 255.0) as u8, (ba.y * 255.0) as u8];

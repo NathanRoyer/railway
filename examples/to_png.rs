@@ -25,7 +25,7 @@ fn main() {
 	let runs = 100;
 	let now = Instant::now();
 	for _ in 0..runs {
-		p.render::<PXF>(&stack, &mut canvas, &mut mask, size.0, size.1, 0);
+		p.render::<PXF, 3>(&stack, &mut canvas, &mut mask, size.0, size.1, 0);
 	}
 	println!("rendered {} times in {}ms.", runs, now.elapsed().as_millis());
 

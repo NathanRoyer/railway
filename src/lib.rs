@@ -148,7 +148,7 @@ impl Program {
         None
     }
 
-    pub fn render<const PXF: u8>(
+    pub fn render<const PXF: u8, const SSAA: usize>(
         &self,
         stack: &[Couple],
         dst: &mut [u8],
@@ -157,7 +157,7 @@ impl Program {
         height: usize,
         pitch: usize,
     ) {
-        wizdraw::rdr::<PXF>(self, stack, dst, mask, width, height, pitch);
+        wizdraw::rdr::<PXF, SSAA>(self, stack, dst, mask, width, height, pitch);
     }
 
     /// does not check argument default values (on purpose)
