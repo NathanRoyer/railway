@@ -1,6 +1,6 @@
 [package]
 name = "railway"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2021"
 authors = [ "Nathan ROYER <nathan.royer.pro@gmail.com>" ]
 description = "Binary file format for vector animated pictures"
@@ -11,7 +11,7 @@ readme = "README.md"
 categories = [ "parsing", "rendering", "no-std", "graphics" ]
 
 [dependencies]
-wizdraw = "1.1.2"
+wizdraw = "1.1.3"
 vek = { version = "0.15.8", default-features = false }
 num-traits = { version = "0.2.15", default-features = false, features = [ "libm" ] }
 
