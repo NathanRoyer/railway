@@ -1,8 +1,8 @@
-use railway::*;
+use railway::{*, computing::{*, Operation::*}};
 use std::env::args;
 use std::fs;
 
-fn arg(name: Option<String>, value: Couple) -> Argument {
+fn arg(name: Option<String>, value: Couple) -> Argument<String> {
 	Argument {
 		name,
 		value,
@@ -13,89 +13,112 @@ fn arg(name: Option<String>, value: Couple) -> Argument {
 use core::f32::consts::TAU;
 
 fn main() {
-	let mut p = Program::new();
 	let w = 200.0;
 	let h = 200.0;
 
-	// top left = 0
-	p.arguments.push(arg(None, C_ZERO));
-	// size = 1
-	p.arguments.push(arg(Some("size".into()), Couple::new(w, h)));
-	// top left = 2
-	p.arguments.push(arg(None, Couple::new(0.05 * w, 0.05 * h)));
-	// bottom right = 3
-	p.arguments.push(arg(None, Couple::new(0.95 * w, 0.95 * h)));
-	// bottom left = 4
-	p.arguments.push(arg(None, Couple::new(0.05 * w, 0.95 * h)));
-	// top right = 5
-	p.arguments.push(arg(None, Couple::new(0.95 * w, 0.05 * h)));
-	// contour = 6 & 7
-	p.arguments.push(arg(None, Couple::new(0.5, 0.1)));
-	p.arguments.push(arg(None, Couple::new(0.5, 1.0)));
-	// pattern = 8
-	p.arguments.push(arg(None, Couple::new(100.0, 0.0)));
-	// width = 9
-	p.arguments.push(arg(None, Couple::new(4.0, 0.0)));
-	// inverted rg = 10
-	p.arguments.push(arg(None, Couple::new(0.1, 0.5)));
-	// half circle angles = 11
-	p.arguments.push(arg(None, Couple::new(0.0, TAU)));
-	// radii = 12
-	p.arguments.push(arg(None, Couple::new(40.0, 40.0)));
-	// center = 13
-	p.arguments.push(arg(None, Couple::new(0.75 * w, 0.25 * h)));
+	let mut arguments = Vec::new();
 
-	p.strokers.push(Stroker {
-		pattern: 8,
-		width: 9,
-		color: [6, 7],
-	});
+	let _zero = arguments.len();
+	arguments.push(arg(None, C_ZERO));
 
-	p.lines.push(Line {
-		points: [4, 2]
-	});
+	let size = arguments.len();
+	arguments.push(arg(Some("size".into()), Couple::new(w, h)));
 
-	p.quadratic_curves.push(QuadraticCurve {
-		points: [2, 4, 3]
-	});
+	let top_left_f = arguments.len();
+	arguments.push(arg(None, Couple::new(0.05, 0.05)));
 
-	p.lines.push(Line {
-		points: [3, 4]
-	});
+	let bottom_right_f = arguments.len();
+	arguments.push(arg(None, Couple::new(0.95, 0.95)));
 
-	p.arcs.push(Arc {
-		center: 13,
-		angular_range: 11,
-		radii: 12,
-	});
+	let contour_rg = arguments.len();
+	arguments.push(arg(None, Couple::new(0.5, 0.1)));
 
-	p.triangles.push(Triangle {
-		points: [2, 4, 3],
-		colors: [[6, 7], [10, 7], [6, 7]],
-	});
+	let contour_ba = arguments.len();
+	arguments.push(arg(None, Couple::new(0.5, 1.0)));
 
-	p.triangles.push(Triangle {
-		points: [2, 5, 3],
-		colors: [[6, 7], [10, 7], [6, 7]],
-	});
+	let pattern = arguments.len();
+	arguments.push(arg(None, Couple::new(100.0, 0.0)));
 
-	let l = StepType::Line;
-	let c = StepType::QuadraticCurve;
-	let a = StepType::Arc;
-	p.paths.push(vec![(l, 0), (c, 0), (l, 1)]);
-	p.paths.push(vec![(a, 0)]);
-	p.backgrounds.push(vec![0, 1]);
+	let width = arguments.len();
+	arguments.push(arg(None, Couple::new(4.0, 0.0)));
 
-	p.rendering_steps.push(RenderingStep::Clip(0, 0));
-	p.rendering_steps.push(RenderingStep::Stroke(0, 0));
-	p.rendering_steps.push(RenderingStep::Clip(1, 0));
-	p.rendering_steps.push(RenderingStep::Stroke(1, 0));
+	let inverted_rg = arguments.len();
+	arguments.push(arg(None, Couple::new(0.1, 0.5)));
 
-	let mut buffer = Vec::with_capacity(p.file_size());
-	p.dump::<_, ()>(|slice| {
-		buffer.extend_from_slice(slice);
-		Ok(slice.len())
-	}).unwrap();
+	let deltas = arguments.len();
+	arguments.push(arg(None, Couple::new(TAU, 0.0)));
+
+	let radius = arguments.len();
+	arguments.push(arg(None, Couple::new(0.0, -40.0)));
+
+	let center_f = arguments.len();
+	arguments.push(arg(None, Couple::new(0.75, 0.25)));
+
+	let mut instructions = Vec::new();
+
+	let top_left = arguments.len() + instructions.len();
+	instructions.push(Instruction::new(Multiply2, size, top_left_f, 0));
+
+	let bottom_right = arguments.len() + instructions.len();
+	instructions.push(Instruction::new(Multiply2, size, bottom_right_f, 0));
+
+	let bottom_left = arguments.len() + instructions.len();
+	instructions.push(Instruction::new(Select2, top_left, bottom_right, 0));
+
+	let top_right = arguments.len() + instructions.len();
+	instructions.push(Instruction::new(Select2, bottom_right, top_left, 0));
+
+	let center = arguments.len() + instructions.len();
+	instructions.push(Instruction::new(Multiply2, size, center_f, 0));
+
+	let start_point = arguments.len() + instructions.len();
+	instructions.push(Instruction::new(Add2, center, radius, 0));
+
+	let contour = [contour_rg, contour_ba];
+
+	let line_style = Stroker {
+		pattern,
+		width,
+		color: contour,
+	};
+
+	let background = vec![
+		Triangle {
+			points: [top_left, bottom_left, bottom_right],
+			colors: [contour, [inverted_rg, contour_ba], contour],
+		},
+		Triangle {
+			points: [top_left, top_right, bottom_right],
+			colors: [contour, [inverted_rg, contour_ba], contour],
+		},
+	];
+
+	let slope = vec![
+		PathStep::Line(Line {
+			points: [bottom_left, top_left],
+		}),
+		PathStep::QuadraticCurve(QuadraticCurve {
+			points: [top_left, bottom_left, bottom_right],
+		}),
+		PathStep::Line(Line {
+			points: [bottom_right, bottom_left],
+		}),
+	];
+
+	let disk = vec![PathStep::Arc(Arc {
+		start_point,
+		center,
+		deltas,
+	})];
+
+	let rendering_steps = [
+		RenderingStep::Clip(&slope, &background),
+		RenderingStep::Stroke(&slope, line_style),
+		RenderingStep::Clip(&disk, &background),
+		RenderingStep::Stroke(&disk, line_style),
+	];
+
+	let buffer = serialize(&arguments, &instructions, &[], &rendering_steps);
 	let file_name = args().last().unwrap();
 	fs::write(file_name, &buffer).unwrap();
 }

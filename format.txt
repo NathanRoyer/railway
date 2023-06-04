@@ -2,7 +2,6 @@ FMT
 
 u32: unsigned integer on four bytes in big-endian order
 f32: IEEE 754 number on four bytes in big endian order
-nts: utf-8, null terminated string (C's strings)
 step_type:
     0 = arc
     1 = cubic bezier curve
@@ -15,7 +14,7 @@ u32   magic
 
 u32   # of arguments
       arguments:
-u32       name_length (in terms of bytes)
+u32       string_section_offset
 f32       x_default_value
 f32       y_default_value
 f32       x_range_min
@@ -32,7 +31,7 @@ u32       op3_addr
 
 u32   # of outputs
       outputs:
-u32       name_length (in terms of bytes)
+u32       string_section_offset
 u32       addr
 
 ---- rendering part below ----
@@ -51,9 +50,9 @@ u32       p3_ba_addr
 
 u32   # of arcs
       arcs:
+u32       start_point_addr
 u32       center_addr
-u32       angular_range_addr
-u32       radii_addr
+u32       deltas_addr
 
 u32   # of cubic bezier curves
       bezier curves:
@@ -80,18 +79,24 @@ u32       width_addr (width = p.x + p.y)
 u32       rg_addr
 u32       ba_addr
 
+u32   # of steps
+      steps:
+u32       step_type
+u32       index
+
 u32   # of paths
       paths:
-u32       # of steps
-          steps:
-u32           step_type
-u32           index
+u32       first_step
+u32       length
+
+u32   # of triangle_indexes
+      triangle_indexes:
+u32       triangle
 
 u32   # of backgrounds
       backgrounds:
-u32       # of triangles
-          triangles:
-u32           triangle_index
+u32       first_triangle
+u32       length
 
 u32   # of rendering steps
       rendering steps:
@@ -104,8 +109,6 @@ u32           stroker_index
 
 ---- strings below ----
 
-      arguments:
-nts       name
-
-      outputs:
-nts       name
+u32   # of string bytes
+      string bytes:
+ u8       utf8_byte or null_byte

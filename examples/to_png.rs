@@ -3,9 +3,9 @@ use std::fs::write;
 use png::Encoder;
 use png::ColorType::Rgba;
 use png::BitDepth::Eight;
-use railway::Program;
-use railway::RWY_PXF_RGBA8888 as PXF;
+use railway::*;
 use std::time::Instant;
+use rgb::FromSlice;
 
 fn main() {
 	let prefix = args().last().unwrap();
@@ -13,25 +13,24 @@ fn main() {
 	let png_name = format!("{}.png", &prefix);
 
 	let railway = std::fs::read(&rwy_name).unwrap();
-	let p = Program::parse(&railway).unwrap();
-	let mut stack = p.create_stack();
-	p.compute(&mut stack);
-	let size = p.arguments[p.argument("size").unwrap() as usize].value;
-	let size = (size.x as usize, size.y as usize);
-	let length = size.0 * size.1;
-	let mut canvas = vec![0; length * 4];
+	let mut p = NaiveRenderer::parse(railway.into_boxed_slice()).unwrap();
+	let (w, h) = (300, 300);
+	p.set_argument("size", computing::Couple::new(w as f32, h as f32)).unwrap();
+	p.compute().unwrap();
+	let length = w * h;
+	let mut canvas :Vec<u8> = vec![0; length * 4];
 	let mut mask = vec![0; length];
 
-	let runs = 100;
+	let runs = 10;
 	let now = Instant::now();
 	for _ in 0..runs {
-		p.render::<PXF, 3>(&stack, &mut canvas, &mut mask, size.0, size.1, 0);
+		p.render(canvas.as_rgba_mut(), &mut mask, w, h, w, 3, true).unwrap();
 	}
 	println!("rendered {} times in {}ms.", runs, now.elapsed().as_millis());
 
 	let mut png_buf = Vec::new();
 	{
-		let mut encoder = Encoder::new(&mut png_buf, size.0 as u32, size.1 as u32);
+		let mut encoder = Encoder::new(&mut png_buf, w as u32, h as u32);
 		encoder.set_color(Rgba);
 		encoder.set_depth(Eight);
 		let mut writer = encoder.write_header().unwrap();
