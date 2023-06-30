@@ -24,7 +24,7 @@ fn main() {
 	let runs = 10;
 	let now = Instant::now();
 	for _ in 0..runs {
-		p.render(canvas.as_rgba_mut(), &mut mask, w, h, w, 3, true).unwrap();
+		p.render::<6, 36>(canvas.as_rgba_mut(), &mut mask, w, h, w, true).unwrap();
 	}
 	println!("rendered {} times in {}ms.", runs, now.elapsed().as_millis());
 

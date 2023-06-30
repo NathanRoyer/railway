@@ -185,14 +185,13 @@ impl<T: AsRef<[u8]>> NaiveRenderer<T> {
         self.program.compute(&mut self.stack, Some(&mut self.stack_changes))
     }
 
-    pub fn render(
+    pub fn render<const SSAA: usize, const SSAA_SQ: usize>(
         &mut self,
         dst: &mut [RGBA8],
         mask: &mut [u8],
         w: usize,
         h: usize,
         stride: usize,
-        ssaa: usize,
         alpha_blend: bool,
     ) -> ParsingResult<()> {
         let mask_size = Vec2::new(w, h);
@@ -205,19 +204,6 @@ impl<T: AsRef<[u8]>> NaiveRenderer<T> {
                 i += stride;
             }
         }
-
-        type Fill   = fn(&[Vec2<Float>], &mut [u8], Vec2<usize>);
-        type Stroke = fn(&[Vec2<Float>], &mut [u8], Vec2<usize>, Float);
-        let (fill, stroke): (Fill, Stroke) = match ssaa {
-            1 => (fill::<Float, 1>, stroke::<Float, 1>),
-            2 => (fill::<Float, 2>, stroke::<Float, 2>),
-            3 => (fill::<Float, 3>, stroke::<Float, 3>),
-            4 => (fill::<Float, 4>, stroke::<Float, 4>),
-            5 => (fill::<Float, 5>, stroke::<Float, 5>),
-            6 => (fill::<Float, 6>, stroke::<Float, 6>),
-            9 => (fill::<Float, 9>, stroke::<Float, 9>),
-            _ => panic!("SSAA={} is not supported in NaiveRenderer", ssaa),
-        };
 
         // update flattened paths
         let path_count = self.program.paths();
@@ -298,7 +284,7 @@ impl<T: AsRef<[u8]>> NaiveRenderer<T> {
                                 end,
                             };
 
-                            push_cubic_bezier_segments::<_, 8>(&curve, 0.4, &mut flat);
+                            push_cubic_bezier_segments::<8>(&curve, 0.4, &mut flat);
 
                             end
                         };
@@ -324,7 +310,7 @@ impl<T: AsRef<[u8]>> NaiveRenderer<T> {
                             ctrl1: self.stack[c],
                             end: self.stack[d],
                         };
-                        push_cubic_bezier_segments::<_, 8>(&curve, 0.6, &mut flat);
+                        push_cubic_bezier_segments::<8>(&curve, 0.6, &mut flat);
                     }
                     PathStep::QuadraticCurve(curve) => {
                         let [a, b, c] = curve.points;
@@ -333,7 +319,7 @@ impl<T: AsRef<[u8]>> NaiveRenderer<T> {
                             ctrl: self.stack[b],
                             end: self.stack[c],
                         };
-                        push_cubic_bezier_segments::<_, 8>(&curve.into_cubic(), 0.6, &mut flat);
+                        push_cubic_bezier_segments::<8>(&curve.into_cubic(), 0.6, &mut flat);
                     }
                     PathStep::Line(line) => {
                         let [a, b] = line.points;
@@ -386,7 +372,7 @@ impl<T: AsRef<[u8]>> NaiveRenderer<T> {
             
             mask.fill(0);
             if let Clip(_, i) = rendering_step {
-                fill(&flat_path, mask, mask_size);
+                fill::<SSAA, SSAA_SQ>(&flat_path, mask, mask_size);
 
                 let RawBackground {
                     triangle_index_offset: offset,
@@ -423,7 +409,7 @@ impl<T: AsRef<[u8]>> NaiveRenderer<T> {
                 let p = self.stack[stroker.pattern];
                 let _p = [p.x, p.y];
                 let stroke_width = self.stack[stroker.width];
-                stroke(&flat_path, mask, mask_size, stroke_width.x + stroke_width.y);
+                stroke::<SSAA>(&flat_path, mask, mask_size, stroke_width.x + stroke_width.y);
 
                 let color = color(self.stack[stroker.color[0]], self.stack[stroker.color[1]]);
                 let color = color.map(|float| float as u8);
